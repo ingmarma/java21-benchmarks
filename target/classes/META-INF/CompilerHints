@@ -3,5 +3,9 @@ dontinline,*.*_avgt_jmhStub
 dontinline,*.*_sample_jmhStub
 dontinline,*.*_ss_jmhStub
 dontinline,*.*_thrpt_jmhStub
+inline,com/ingmarma/benchmarks/CompletableFutureBenchmark.completableFutureChainWithTimeout
+inline,com/ingmarma/benchmarks/CompletableFutureBenchmark.completableFutureCommonPool
+inline,com/ingmarma/benchmarks/CompletableFutureBenchmark.completableFutureVirtualThreads
+inline,com/ingmarma/benchmarks/CompletableFutureBenchmark.virtualThreads
 inline,com/ingmarma/benchmarks/VirtualThreadsBenchmark.platformThreads
 inline,com/ingmarma/benchmarks/VirtualThreadsBenchmark.virtualThreads
