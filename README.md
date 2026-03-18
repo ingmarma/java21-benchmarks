@@ -31,14 +31,31 @@ Virtual Threads. El executor debajo importa más que la API que usás.
 
 ---
 
+## S3 — GC Pressure — Cómo escribís código importa
+
+| Benchmark | Tiempo promedio | Error |
+|---|---|---|
+| allocateShortLivedObjects (100k objetos efímeros) | 1.414 ms/op | ± 0.065 |
+| allocateLargeObjects (objetos grandes, Old Gen) | 1.507 ms/op | ± 0.041 |
+| stringConcatenation (+= en loop, 1000 iter) | 0.682 ms/op | ± 0.039 |
+| mixedAllocation (corta + larga vida) | 0.011 ms/op | ± 0.001 |
+| stringBuilder (StringBuilder.append, 1000 iter) | 0.009 ms/op | ± 0.001 |
+
+**String += en loop es 75x más lento que StringBuilder** — mismo resultado,
+diferente presión sobre el G1GC. Cada += crea un nuevo objeto String en el
+heap. 1000 iteraciones = 1000 objetos efímeros que el GC tiene que recolectar.
+
+GC utilizado: G1GC con `-Xms512m -Xmx512m`
+
+---
+
 ## Conclusiones
 
-- Virtual Threads y CompletableFuture con Virtual Threads executor tienen
-  rendimiento equivalente (~15-17 ms/op)
-- El ForkJoinPool común es el cuello de botella real en I/O concurrente —
-  limita la concurrencia a la cantidad de CPUs disponibles
-- CompletableFuture sigue siendo útil para composición async (chain, timeout,
-  fallback) — combinado con Virtual Threads es la mejor opción
+- Virtual Threads son 11x más rápidos que Platform Threads en I/O concurrente
+- CompletableFuture con ForkJoinPool común es 95x más lento que con Virtual Threads — el executor importa más que la API
+- CompletableFuture + Virtual Threads executor tiene rendimiento equivalente a Virtual Threads puros — usá CF para composición async (chain, timeout, fallback)
+- String += en loop genera 75x más presión sobre el GC que StringBuilder — cada concatenación crea un objeto nuevo en el heap
+- Objetos efímeros en Young Gen y objetos grandes en Old Gen generan pausas de ~1.5ms — invisibles pero acumuladas en producción
 
 ---
 
@@ -47,7 +64,7 @@ Virtual Threads. El executor debajo importa más que la API que usás.
 - Java 21.0.9 (Eclipse Adoptium)
 - JMH 1.37 · Maven 3.9
 - Windows 11 — AMD64
-- Warmup: 3 iteraciones · Medición: 5 iteraciones · 1000 tareas I/O
+- Warmup: 3 iteraciones · Medición: 5 iteraciones
 
 ## Cómo correr los benchmarks
 ```bash
@@ -59,6 +76,11 @@ java -jar target/benchmarks.jar
 # Benchmark específico
 java -jar target/benchmarks.jar VirtualThreadsBenchmark
 java -jar target/benchmarks.jar CompletableFutureBenchmark
+java -jar target/benchmarks.jar GCBenchmark
+
+# GCBenchmark con logs de GC
+java -Xms512m -Xmx512m -XX:+UseG1GC -Xlog:gc*:file=gc_g1.log \
+  -jar target/benchmarks.jar GCBenchmark
 ```
 
 ## Stack
