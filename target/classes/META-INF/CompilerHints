@@ -7,5 +7,10 @@ inline,com/ingmarma/benchmarks/CompletableFutureBenchmark.completableFutureChain
 inline,com/ingmarma/benchmarks/CompletableFutureBenchmark.completableFutureCommonPool
 inline,com/ingmarma/benchmarks/CompletableFutureBenchmark.completableFutureVirtualThreads
 inline,com/ingmarma/benchmarks/CompletableFutureBenchmark.virtualThreads
+inline,com/ingmarma/benchmarks/GCBenchmark.allocateLargeObjects
+inline,com/ingmarma/benchmarks/GCBenchmark.allocateShortLivedObjects
+inline,com/ingmarma/benchmarks/GCBenchmark.mixedAllocation
+inline,com/ingmarma/benchmarks/GCBenchmark.stringBuilder
+inline,com/ingmarma/benchmarks/GCBenchmark.stringConcatenation
 inline,com/ingmarma/benchmarks/VirtualThreadsBenchmark.platformThreads
 inline,com/ingmarma/benchmarks/VirtualThreadsBenchmark.virtualThreads
