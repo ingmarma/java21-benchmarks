@@ -42,20 +42,39 @@ Virtual Threads. El executor debajo importa más que la API que usás.
 | stringBuilder (StringBuilder.append, 1000 iter) | 0.009 ms/op | ± 0.001 |
 
 **String += en loop es 75x más lento que StringBuilder** — mismo resultado,
-diferente presión sobre el G1GC. Cada += crea un nuevo objeto String en el
-heap. 1000 iteraciones = 1000 objetos efímeros que el GC tiene que recolectar.
-
-GC utilizado: G1GC con `-Xms512m -Xmx512m`
+diferente presión sobre el G1GC.
 
 ---
 
-## Conclusiones
+## S4 — Profiling — Lo que los números rompen de tus intuiciones
+
+| Benchmark | Tiempo promedio | Error | Unidad |
+|---|---|---|---|
+| stringJoinBuilder | 15.576 | ± 1.452 | µs/op |
+| stringJoinStream | 25.273 | ± 2.550 | µs/op |
+| linearSearch (stream filter) | 76.282 | ± 8.336 | µs/op |
+| sortWithParallelStream | 3.904 | ± 1.193 | ms/op |
+| hashSetSearch (new HashSet + contains) | 4.480 | ± 1.986 | ms/op |
+| sortWithCollections | 18.501 | ± 3.063 | ms/op |
+| sortWithStream | 18.452 | ± 1.347 | ms/op |
+
+**HashSet es 59x más lento que búsqueda lineal** en este caso — porque
+construir el HashSet desde 100k elementos tiene un overhead enorme.
+O(1) no significa "siempre más rápido".
+
+**Parallel Stream es 4.7x más rápido** que Collections.sort para ordenar
+100k elementos.
+
+---
+
+## Conclusiones acumuladas
 
 - Virtual Threads son 11x más rápidos que Platform Threads en I/O concurrente
 - CompletableFuture con ForkJoinPool común es 95x más lento que con Virtual Threads — el executor importa más que la API
-- CompletableFuture + Virtual Threads executor tiene rendimiento equivalente a Virtual Threads puros — usá CF para composición async (chain, timeout, fallback)
-- String += en loop genera 75x más presión sobre el GC que StringBuilder — cada concatenación crea un objeto nuevo en el heap
-- Objetos efímeros en Young Gen y objetos grandes en Old Gen generan pausas de ~1.5ms — invisibles pero acumuladas en producción
+- String += en loop genera 75x más presión sobre el GC que StringBuilder
+- HashSet no siempre es más rápido — el costo de construcción puede superar el beneficio de O(1)
+- Parallel Stream es 4.7x más rápido que sort secuencial para colecciones grandes
+- StringBuilder es 1.6x más rápido que Stream para join de strings
 
 ---
 
@@ -77,6 +96,7 @@ java -jar target/benchmarks.jar
 java -jar target/benchmarks.jar VirtualThreadsBenchmark
 java -jar target/benchmarks.jar CompletableFutureBenchmark
 java -jar target/benchmarks.jar GCBenchmark
+java -jar target/benchmarks.jar ProfilingBenchmark
 
 # GCBenchmark con logs de GC
 java -Xms512m -Xmx512m -XX:+UseG1GC -Xlog:gc*:file=gc_g1.log \
