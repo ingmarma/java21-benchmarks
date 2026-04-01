@@ -58,12 +58,28 @@ diferente presión sobre el G1GC.
 | sortWithCollections | 18.501 | ± 3.063 | ms/op |
 | sortWithStream | 18.452 | ± 1.347 | ms/op |
 
-**HashSet es 59x más lento que búsqueda lineal** en este caso — porque
-construir el HashSet desde 100k elementos tiene un overhead enorme.
-O(1) no significa "siempre más rápido".
+**HashSet es 59x más lento que búsqueda lineal** en este caso — O(1) no
+significa "siempre más rápido". El costo de construcción importa.
 
-**Parallel Stream es 4.7x más rápido** que Collections.sort para ordenar
-100k elementos.
+**Parallel Stream es 4.7x más rápido** que Collections.sort para 100k elementos.
+
+---
+
+## S5 — Concurrencia Avanzada — synchronized vs Lock vs Atomic vs Virtual Threads
+
+| Benchmark | Tiempo promedio | Error | Unidad |
+|---|---|---|---|
+| virtualThreadsAtomicCounter | 5.525 | ± 0.352 | ms/op |
+| countDownLatchCoordination | 15.118 | ± 0.381 | ms/op |
+| phaserCoordination | 15.106 | ± 1.191 | ms/op |
+| reentrantLockCounter | 15.387 | ± 4.421 | ms/op |
+| synchronizedCounter | 24.829 | ± 8.520 | ms/op |
+| atomicCounter (pool fijo) | 27.984 | ± 7.952 | ms/op |
+
+**Virtual Threads + AtomicInteger es 5x más rápido que synchronized** con
+100 threads concurrentes incrementando un contador 1000 veces cada uno.
+AtomicInteger con pool fijo es el más lento — el overhead de gestión del
+pool supera el beneficio lock-free en este escenario.
 
 ---
 
@@ -74,7 +90,8 @@ O(1) no significa "siempre más rápido".
 - String += en loop genera 75x más presión sobre el GC que StringBuilder
 - HashSet no siempre es más rápido — el costo de construcción puede superar el beneficio de O(1)
 - Parallel Stream es 4.7x más rápido que sort secuencial para colecciones grandes
-- StringBuilder es 1.6x más rápido que Stream para join de strings
+- Virtual Threads + AtomicInteger es 5x más rápido que synchronized en concurrencia alta
+- CountDownLatch y Phaser tienen rendimiento equivalente para coordinación (~15ms)
 
 ---
 
@@ -97,6 +114,7 @@ java -jar target/benchmarks.jar VirtualThreadsBenchmark
 java -jar target/benchmarks.jar CompletableFutureBenchmark
 java -jar target/benchmarks.jar GCBenchmark
 java -jar target/benchmarks.jar ProfilingBenchmark
+java -jar target/benchmarks.jar ConcurrencyBenchmark
 
 # GCBenchmark con logs de GC
 java -Xms512m -Xmx512m -XX:+UseG1GC -Xlog:gc*:file=gc_g1.log \
